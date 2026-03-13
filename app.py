@@ -10,6 +10,7 @@ a potential price reversal or dead cat bounce.
 """
 
 import datetime
+import base64
 import streamlit as st
 import pandas as pd
 import yfinance as yf
@@ -228,18 +229,6 @@ def build_chart(ihsg_df: pd.DataFrame, whi: pd.Series) -> go.Figure:
 def main() -> None:
     st.title("Whitehole Index (WHI) — Market Timing Indicator for IHSG")
 
-    st.markdown(
-        """
-        > **A spike in WHI above 4,000 indicates a *retail flush* phase,
-        > signaling a potential price reversal.**
-        >
-        > The WHI measures the ratio of stocks breaking *below* their
-        > short-term moving-average floor versus those breaking *above*
-        > their ceiling, scaled by x800. A high value means far more
-        > stocks are capitulating than advancing — a classic panic signal.
-        """
-    )
-
     # ---- Sidebar: date range picker ----
     st.sidebar.header("📅 Date Range")
     start_date = st.sidebar.date_input("Start date", value=DEFAULT_START)
@@ -317,6 +306,43 @@ def main() -> None:
     fig = build_chart(ihsg_df, whi)
     st.plotly_chart(fig, use_container_width=True)
 
+    st.markdown(
+        """
+        ### How to interpret WHI values?
+        
+        A spike in WHI above 4,000 indicates a *retail flush* phase,
+        signaling a potential price reversal.
+        
+        The WHI measures the ratio of stocks breaking *below* their
+        short-term moving-average floor versus those breaking *above*
+        their ceiling, scaled by x800. A high value means far more
+        stocks are capitulating than advancing — a classic panic signal.
+
+        > Disclaimer: This app is only for testing purposes. The formula used in this app is not yet verified by Farrell, the research author.
+        """
+    )
+
+    st.markdown("---")
+    st.markdown(
+        """
+        ### About This Streamlit App
+         
+        This app is based on a research paper titled **"The Whitehole Index Forecasting on Jakarta Composite Index"**  
+        Authored by **Mohammad Farrell Agung Satrio** from **Outlier research**  
+        Corresponding email: [Farrellagung53@gmail.com](mailto:Farrellagung53@gmail.com)
+        """
+    )
+
+    # ---- Embedded PDF (expandable) ----
+    with st.expander("📄 View Whitehole Index Research Paper"):
+        try:
+            with open("Whitehole Index - Finance (2).pdf", "rb") as f:
+                base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf"></iframe>'
+            st.markdown(pdf_display, unsafe_allow_html=True)
+        except FileNotFoundError:
+            st.error("PDF file not found in the repository.")
+
     # ---- Data table (expandable) ----
     with st.expander("📊 View raw WHI data table"):
         display_df = pd.DataFrame({
@@ -325,6 +351,7 @@ def main() -> None:
         })
         st.dataframe(display_df.sort_index(ascending=False), use_container_width=True)
 
+    
 
 if __name__ == "__main__":
     main()
