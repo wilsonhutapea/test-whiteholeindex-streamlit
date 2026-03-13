@@ -15,7 +15,6 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 # ---------------------------------------------------------------------------
 # Page configuration
@@ -139,6 +138,9 @@ def calculate_whi(closes: pd.DataFrame, scale: float = 800.0) -> pd.Series:
     # Step G: Scale the raw ratio to match the paper's threshold bands
     whi = raw_whi * scale
 
+    # Cap WHI value to 10000
+    whi = whi.clip(upper=10000)
+
     return whi
 
 
@@ -146,35 +148,17 @@ def calculate_whi(closes: pd.DataFrame, scale: float = 800.0) -> pd.Series:
 # Plotly visualization
 # ---------------------------------------------------------------------------
 def build_chart(ihsg_df: pd.DataFrame, whi: pd.Series) -> go.Figure:
-    """Create a dual-axis chart: IHSG line + WHI bars with threshold lines."""
+    """Create a single-axis chart: IHSG line + WHI bars with threshold lines."""
 
-    fig = make_subplots(
-        rows=2, cols=1,
-        shared_xaxes=True,
-        vertical_spacing=0.06,
-        row_heights=[0.6, 0.4],
-        subplot_titles=("IHSG (Jakarta Composite Index)", "Whitehole Index (WHI)"),
-    )
+    fig = go.Figure()
 
-    # --- Primary subplot: IHSG Close price ---
-    fig.add_trace(
-        go.Scatter(
-            x=ihsg_df.index,
-            y=ihsg_df["Close"],
-            mode="lines",
-            name="IHSG Close",
-            line=dict(color="black", width=1.8),
-        ),
-        row=1, col=1,
-    )
-
-    # --- Secondary subplot: WHI bars ---
     # Colour bars based on threshold
     colors = [
         "#D32F2F" if v >= 4000 else "#FF9800" if v >= 2000 else "#9E9E9E"
         for v in whi.values
     ]
 
+    # --- WHI bars ---
     fig.add_trace(
         go.Bar(
             x=whi.index,
@@ -182,42 +166,54 @@ def build_chart(ihsg_df: pd.DataFrame, whi: pd.Series) -> go.Figure:
             name="WHI",
             marker_color=colors,
             opacity=0.85,
-        ),
-        row=2, col=1,
+        )
     )
 
-    # --- Threshold lines on WHI subplot ---
+    # --- IHSG Close price ---
+    fig.add_trace(
+        go.Scatter(
+            x=ihsg_df.index,
+            y=ihsg_df["Close"],
+            mode="lines",
+            name="IHSG Close",
+            line={"width": 1.8, "color": "black"}
+        )
+    )
+
+
+    # --- Threshold lines ---
     fig.add_hline(
-        y=4000, line_dash="dash", line_color="red", line_width=1.5,
+        y=4000, line_dash="dash", line_color="red", line_width=3,
         annotation_text="Band 4000 (Extreme Panic)",
-        annotation_position="top left",
+        annotation_position="top right",
         annotation_font_color="red",
-        row=2, col=1,
+        layer="below",
     )
     fig.add_hline(
-        y=2000, line_dash="dash", line_color="orange", line_width=1.5,
+        y=2000, line_dash="dash", line_color="orange", line_width=3,
         annotation_text="Band 2000",
-        annotation_position="top left",
+        annotation_position="top right",
         annotation_font_color="orange",
-        row=2, col=1,
+        layer="below",
     )
 
     # --- Layout polish ---
     fig.update_layout(
+        title="IHSG and Whitehole Index (WHI)",
+        title_x=0.35,
+        title_font_color="gray",
         height=720,
         template="plotly_white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        margin=dict(l=60, r=30, t=60, b=40),
+        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
+        margin={"l": 60, "r": 60, "t": 80, "b": 40},
         hovermode="x unified",
         bargap=0.15,
+        yaxis_title="Value",
     )
-    fig.update_yaxes(title_text="IHSG Close", row=1, col=1)
-    fig.update_yaxes(title_text="WHI Value", row=2, col=1)
     fig.update_xaxes(
         title_text="Date",
-        row=2, col=1,
         tickformat="%d %b %Y",
-        rangeslider=dict(visible=False),
+        rangeslider={"visible": False},
     )
 
     return fig
