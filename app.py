@@ -15,6 +15,7 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
+from streamlit_pdf_viewer import pdf_viewer
 
 # ---------------------------------------------------------------------------
 # Page configuration
@@ -333,9 +334,8 @@ def main() -> None:
     with st.expander("📄 View Whitehole Index Research Paper"):
         try:
             with open("Whitehole Index - Finance (2).pdf", "rb") as f:
-                base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf"></iframe>'
-            st.markdown(pdf_display, unsafe_allow_html=True)
+                binary_data = f.read()
+            pdf_viewer(input=binary_data, width=700)
         except FileNotFoundError:
             st.error("PDF file not found in the repository.")
 
