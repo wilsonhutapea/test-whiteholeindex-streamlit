@@ -333,18 +333,8 @@ def main() -> None:
     with st.expander("📄 View Whitehole Index Research Paper"):
         try:
             with open("Whitehole Index - Finance (2).pdf", "rb") as f:
-                pdf_bytes = f.read()
-                base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-            
-            st.download_button(
-                label="📥 Download PDF (if preview is blocked)",
-                data=pdf_bytes,
-                file_name="Whitehole Index.pdf",
-                mime="application/pdf"
-            )
-
-            # Using <embed> or <object> is less likely to be blocked by Edge than <iframe> for data URIs
-            pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf" />'
+                base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf"></iframe>'
             st.markdown(pdf_display, unsafe_allow_html=True)
         except FileNotFoundError:
             st.error("PDF file not found in the repository.")
